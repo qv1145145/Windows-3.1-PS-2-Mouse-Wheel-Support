@@ -46,7 +46,7 @@ Open an issue or submit a pull request on GitHub. Any help is greatly appreciate
 │   ├── MOUSE.DEF.diff
 │   └── PS2.ASM.diff       
 └── TEST/
-    ├── tes.cpp            - test program that calls VxD directly
+    ├── test.cpp           - test program that calls VxD directly
     └── test.asm           - test program that calls MOUSE.DRV exports
 ```
 
