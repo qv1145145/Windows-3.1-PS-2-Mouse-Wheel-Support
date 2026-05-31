@@ -47,7 +47,7 @@ Open an issue or submit a pull request on GitHub. Any help is greatly appreciate
 │   └── PS2.ASM.diff       
 └── TEST/
     ├── tes.cpp            - test program that calls VxD directly
-    └── test_dos.cpp       - test program that calls MOUSE.DRV exports
+    └── test.asm           - test program that calls MOUSE.DRV exports
 ```
 
 ## Requirements
@@ -83,11 +83,11 @@ Apply the patches to the original DDK `MOUSE` directory and run `nmake`.
 
 ### Direct VxD API test
 
-Compile `TEST/testvxd.c` with Open Watcom. If the VxD is loaded correctly, it should display version and supported status.
+Compile `TEST/test.cpp` with Open Watcom. If the VxD is loaded correctly, it should display version and supported status.
 
 ### Driver function test
 
-Compile `TEST/testdrv.c`. It calls `LoadLibrary` and `GetProcAddress` for the exported functions. Currently both return 0.
+Compile `TEST/test.asm`. It tests whether the VxD exists and calls the API.
 
 ## Known Limitations
 
