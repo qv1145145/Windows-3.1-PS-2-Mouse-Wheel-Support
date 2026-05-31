@@ -1,0 +1,20 @@
+Debug=-DDEBUG
+
+INC_DIR = D:\DDK31\386\INCLUDE
+
+MASMOBJ=masm5 -p -w2 -Mx $(Debug) -I$(INC_DIR)
+
+.asm.obj:
+        $(MASMOBJ) $*;
+
+all:    wheelvxd.386
+
+wheelvxd.obj: wheelvxd.asm wheelvxd.inc
+
+wheelvxd.386: wheelvxd.def wheelvxd.obj
+        link386 wheelvxd.obj, wheelvxd.386, wheelvxd.map, , wheelvxd.def
+        addhdr wheelvxd.386
+        mapsym32 wheelvxd
+
+clean:
+        del *.obj *.386 *.map

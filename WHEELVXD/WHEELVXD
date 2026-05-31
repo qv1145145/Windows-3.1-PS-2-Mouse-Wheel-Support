@@ -1,0 +1,29 @@
+# sample make file for building wheelvxd virtual device for Windows
+
+# comment this definition out with a "#", if building a non-debugging version
+Debug=-DDEBUG
+
+all : wheelvxd.386 tstwhel.exe
+
+.asm.obj:
+        masm5 -p -w2 -Mx $(Debug) -I..\include $*;
+
+.asm.lst:
+        masm5 -l -p -w2 -Mx $(Debug) -I..\include $*;
+
+tstwhel.obj:  tstwhel.asm wheelvxd.inc
+
+tstwhel.exe: tstwhel.obj
+      link386 tstwhel.obj;
+
+wheelvxd.obj : wheelvxd.asm wheelvxd.inc \
+                        ..\include\debug.inc \
+                        ..\include\vmm.inc   \
+                        ..\include\vpicd.inc
+
+wheelvxd.386: wheelvxd.def wheelvxd.obj
+        link386 @wheelvxd.lnk
+        addhdr wheelvxd.386
+        mapsym32 wheelvxd
+
+clean:

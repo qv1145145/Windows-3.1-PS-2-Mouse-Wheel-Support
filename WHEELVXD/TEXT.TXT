@@ -1,0 +1,47 @@
+	masm5 -p -w2 -Mx -DDEBUG -ID:\DDK31\386\INCLUDE wheelvxd;
+Microsoft (R) Macro Assembler Version 5.10B 
+Copyright (C) Microsoft Corp 1981, 1989.  All rights reserved.
+
+wheelvxd.ASM(55): warning A5104: Jump within short distance
+wheelvxd.ASM(70): warning A5104: Jump within short distance
+wheelvxd.ASM(90): warning A5114: Operand size does not match segment word size
+wheelvxd.ASM(92): warning A5114: Operand size does not match segment word size
+wheelvxd.ASM(101): warning A5104: Jump within short distance
+wheelvxd.ASM(103): warning A5104: Jump within short distance
+wheelvxd.ASM(104): warning A5104: Jump within short distance
+wheelvxd.ASM(109): warning A5104: Jump within short distance
+wheelvxd.ASM(198): warning A5104: Jump within short distance
+wheelvxd.ASM(208): warning A5104: Jump within short distance
+wheelvxd.ASM(215): warning A5104: Jump within short distance
+wheelvxd.ASM(218): warning A5104: Jump within short distance
+wheelvxd.ASM(220): warning A5104: Jump within short distance
+wheelvxd.ASM(224): warning A5104: Jump within short distance
+wheelvxd.ASM(234): warning A5104: Jump within short distance
+wheelvxd.ASM(239): warning A5104: Jump within short distance
+wheelvxd.ASM(242): warning A5104: Jump within short distance
+wheelvxd.ASM(273): warning A5104: Jump within short distance
+wheelvxd.ASM(275): warning A5104: Jump within short distance
+wheelvxd.ASM(279): warning A5104: Jump within short distance
+wheelvxd.ASM(282): warning A5104: Jump within short distance
+wheelvxd.ASM(285): warning A5104: Jump within short distance
+wheelvxd.ASM(288): warning A5104: Jump within short distance
+wheelvxd.ASM(292): warning A5104: Jump within short distance
+wheelvxd.ASM(295): warning A5104: Jump within short distance
+wheelvxd.ASM(299): warning A5104: Jump within short distance
+wheelvxd.ASM(302): warning A5104: Jump within short distance
+
+  47460 + 233788 Bytes symbol space free
+
+     27 Warning Errors
+      0 Severe  Errors
+	link386 wheelvxd.obj, wheelvxd.386, wheelvxd.map, , wheelvxd.def
+
+Microsoft (R) Linear-Executable Linker  Version 1.00.058
+Copyright (C) Microsoft Corp 1988-1989.  All rights reserved.
+
+	addhdr wheelvxd.386
+	mapsym32 wheelvxd
+Microsoft (R) Symbol File Generator  Version 6.01
+Copyright (C) Microsoft Corp 1984-1990.  All rights reserved.
+
+	Unexpected eof reading: WHEELVXD.MAP
