@@ -46,9 +46,8 @@ Open an issue or submit a pull request on GitHub. Any help is greatly appreciate
 │   ├── MOUSE.DEF.diff
 │   └── PS2.ASM.diff       
 └── TEST/
-    ├── testvxd.c          - test program that calls VxD directly
-    ├── testdrv.c          - test program that calls MOUSE.DRV exports
-    └── Makefile           - Open Watcom makefile
+    ├── tes.cpp            - test program that calls VxD directly
+    └── test_dos.cpp       - test program that calls MOUSE.DRV exports
 ```
 
 ## Requirements
