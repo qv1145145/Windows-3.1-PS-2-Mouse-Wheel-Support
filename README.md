@@ -1,19 +1,41 @@
-# Windows 3.1 PS/2 Mouse Wheel Support
+# Windows 3.1 PS/2 Mouse Wheel Support (Experimental / Work in Progress)
 
-This project adds scroll wheel support to Windows 3.1 for PS/2 mice (IntelliMouse compatible). It consists of a VxD (`WHEELVXD.386`) that hooks IRQ12 or uses I/O trapping to parse wheel packets, and a modified mouse driver (`MOUSE.DRV`) that exports `WheelSupported` and `GetWheelDelta` APIs.
+**Status: Not fully functional – contributions welcome!**  
+This project is an attempt to add scroll wheel support to Windows 3.1 for PS/2 mice (IntelliMouse compatible). The code compiles and installs, but the VxD currently fails to register its API entry point (`INT 2Fh` returns zero), and the modified mouse driver always returns `0`. This repository is a call for help from anyone with experience in Windows 3.1 VxD development.
 
-## Features
+## Overview
 
-- Detects wheel presence using the standard IntelliMouse rate sequence (200 → 100 → 80 Hz).
-- Accumulates wheel deltas while preserving original mouse movement and button functionality.
-- Provides a simple protected‑mode API (via `INT 2Fh`) to query wheel support and retrieve accumulated delta.
-- Optional: modified `MOUSE.DRV` can forward calls to the VxD, allowing existing applications to use `LoadLibrary`/`GetProcAddress`.
+The project consists of:
+- `WHEELVXD.386` – a VxD that hooks IRQ12 or uses I/O trapping on port 0x60 to parse PS/2 packets, detect a wheel via the standard rate sequence (200 → 100 → 80 Hz), and accumulate wheel deltas.
+- A patched `MOUSE.DRV` that exports `WheelSupported` and `GetWheelDelta` (ordinals 7 and 8) which forward calls to the VxD.
+
+The intended API (via `INT 2Fh`, AX=1684h, BX=0xE5E5) should provide:
+- `AX=0`: version (0x0100)
+- `AX=1`: wheel supported? (1 if detected)
+- `AX=2`: get accumulated delta (clears after read)
+
+## Current Issues (Help Needed!)
+
+- **VxD entry point not found** – `INT 2Fh` returns a null pointer even though the VxD is installed (file in SYSTEM, `device=` line in `SYSTEM.INI`). The VxD compiles and passes `addhdr`, but the API is not registered.
+- **Memory allocation may fail** – `_PageAllocate` could be returning an error, causing the VxD to abort initialisation (though Windows boots normally).
+- **I/O callback not triggered** – When using `Install_IO_Handler`, the callback routine may never be called, or the wheel detection sequence fails.
+- **Driver extension always returns 0** – Even though `GetProcAddress` finds the exported functions, they return 0 because the VxD is not accessible.
+
+## How You Can Help
+
+If you have experience with Windows 3.1 VxD development, please consider:
+- Debugging the VxD initialisation – check why `INT 2Fh` returns zero.
+- Testing the I/O trapping or IRQ hooking variants.
+- Verifying the wheel detection sequence on real hardware or emulators (86Box, VirtualBox).
+- Providing a working version of `WHEELVXD.386` or a pull request with fixes.
+
+Open an issue or submit a pull request on GitHub. Any help is greatly appreciated!
 
 ## Repository Structure
 
 ```
 ├── WHEELVXD/
-│   ├── WHEELVXD.ASM       - VxD source (direct I/O or I/O trapping version)
+│   ├── WHEELVXD.ASM       - VxD source (two versions: IRQ hook and I/O trap)
 │   ├── WHEELVXD.INC       - constants and device ID
 │   ├── WHEELVXD.DEF       - module definition file
 │   ├── MAKEFILE           - build with MASM 5.10+ and link386
@@ -22,7 +44,7 @@ This project adds scroll wheel support to Windows 3.1 for PS/2 mice (IntelliMous
 │   ├── MOUSE.ASM.diff     - changes to original DDK mouse driver
 │   ├── MOUSE.INC.diff
 │   ├── MOUSE.DEF.diff
-│   └── PS2.ASM.diff       (if modified)
+│   └── PS2.ASM.diff       
 └── TEST/
     ├── testvxd.c          - test program that calls VxD directly
     ├── testdrv.c          - test program that calls MOUSE.DRV exports
@@ -31,124 +53,58 @@ This project adds scroll wheel support to Windows 3.1 for PS/2 mice (IntelliMous
 
 ## Requirements
 
-- **Build environment**: DOSBox or real MS‑DOS with Microsoft MASM 5.10B, link386, addhdr, mapsym32 (all from Windows 3.1 DDK).
+- **Build environment**: DOSBox or real MS‑DOS with Microsoft MASM 5.10B, link386, addhdr, mapsym32 (from Windows 3.1 DDK).
 - **Runtime**: Windows 3.1 in 386 enhanced mode, PS/2 mouse (or emulated, e.g., 86Box, VirtualBox with PS/2 mouse).
 
 ## Building
 
 ### VxD
 
-1. Place the source files in a directory, e.g., `D:\DDK31\386\WHEELVXD`.
-2. Set up environment (example for DOSBox):
+1. Place sources in a directory (e.g., `D:\DDK31\386\WHEELVXD`).
+2. In DOSBox, set environment:
    ```batch
    set PATH=D:\DDK31\386\TOOLS;%PATH%
    set INCLUDE=D:\DDK31\386\INCLUDE
    ```
-3. Run `nmake` (the provided `MAKEFILE`).
-4. Successful build yields `WHEELVXD.386`.
+3. Run `nmake`.
+4. Output: `WHEELVXD.386`.
 
 ### Mouse Driver (optional)
 
-Apply the patches to the original DDK `MOUSE` directory, then compile with `nmake`.
+Apply the patches to the original DDK `MOUSE` directory and run `nmake`.
 
 ## Installation
 
 1. Copy `WHEELVXD.386` to `C:\WINDOWS\SYSTEM`.
-2. Add the following line to the `[386enh]` section of `SYSTEM.INI`:
-   ```
-   device=WHEELVXD.386
-   ```
+2. Add `device=WHEELVXD.386` to the `[386enh]` section of `SYSTEM.INI`.
 3. Restart Windows.
-4. Optionally replace the original `MOUSE.DRV` with the patched version (backup first).
+4. (Optional) Replace `MOUSE.DRV` with the patched version (backup original).
 
-## Usage
+## Testing
 
-### Direct VxD API
+### Direct VxD API test
 
-Call `INT 2Fh` with `AX=1684h`, `BX=0E5E5h` to retrieve the API entry point. Then call with function codes:
+Compile `TEST/testvxd.c` with Open Watcom. If the VxD is loaded correctly, it should display version and supported status.
 
-| AX | Function | Returns |
-|----|----------|---------|
-| 0  | Get version | `AX = 0x0100` |
-| 1  | Wheel supported | `AX = 0` (no) or `1` (yes) |
-| 2  | Get wheel delta | `AX = signed accumulated delta`, cleared after read |
+### Driver function test
 
-Example C code (Open Watcom):
+Compile `TEST/testdrv.c`. It calls `LoadLibrary` and `GetProcAddress` for the exported functions. Currently both return 0.
 
-```c
-#define WHEELVXD_Dev_ID   0xE5E5
-#define WHEEL_GET_VERSION 0
-#define WHEEL_SUPPORTED   1
-#define WHEEL_GET_DELTA   2
+## Known Limitations
 
-typedef void (__far * VXDCALL)(void);
-VXDCALL vxdEntry = NULL;
-
-BOOL GetVxDApi(void) {
-    __asm {
-        mov ax, 1684h
-        mov bx, WHEELVXD_Dev_ID
-        int 2Fh
-        mov word ptr [vxdEntry], di
-        mov word ptr [vxdEntry+2], es
-    }
-    return vxdEntry != NULL;
-}
-
-int GetWheelDelta(void) {
-    int delta;
-    if (!vxdEntry) return 0;
-    __asm {
-        mov ax, WHEEL_GET_DELTA
-        xor bx, bx
-        call dword ptr [vxdEntry]
-        mov [delta], ax
-    }
-    return delta;
-}
-```
-
-### Using the Patched MOUSE.DRV
-
-After installing the patched driver, an application can call `LoadLibrary("MOUSE.DRV")` and `GetProcAddress` for `WheelSupported` (ordinal 7) and `GetWheelDelta` (ordinal 8).
-
-## How It Works
-
-The VxD either hooks IRQ12 (standard PS/2 interrupt) or installs an I/O callback on port 60h. The state machine parses 3‑byte (standard) and 4‑byte (wheel) packets, extracts the signed wheel delta, and accumulates it. The wheel detection sequence follows the IntelliMouse protocol:
-
-1. Set sample rate to 200 Hz (`0xF3, 200`)
-2. Set sample rate to 100 Hz (`0xF3, 100`)
-3. Set sample rate to 80 Hz (`0xF3, 80`)
-4. Read device ID (`0xF2`); if ID == 3 or 4, wheel is supported.
-
-The accumulated value is stored in shared memory and can be queried via the API.
-
-## Limitations
-
-- Only PS/2 mice (IRQ12) are supported.
-- The VxD must be loaded before Windows enables mouse interrupts (works when placed in `[386enh]`).
-- If the mouse does not support the IntelliMouse protocol, the wheel will not be detected.
-
-## Troubleshooting
-
-- **Test program cannot find VxD** → check `SYSTEM.INI`, file location, and that `addhdr` was run on `WHEELVXD.386`.
-- **Wheel delta always 0** → your mouse may not support the standard protocol; try forcing `v_wheel_supported = 1` in the VxD.
-- **Windows fails to start** → remove the `device=` line and restore original `MOUSE.DRV`.
-
-## References
-
-- Microsoft Windows 3.1 DDK documentation (especially `VFINTD.386` sample for IRQ virtualization and `VKDIO.ASM` for I/O trapping).
-- “PS/2 Mouse Interfacing” and “IntelliMouse Protocol” specifications (publicly available).
+- Only PS/2 mice (IRQ12) are targeted.
+- The VxD may not load at all; the project is not yet functional.
+- The wheel detection sequence has not been verified on real hardware.
 
 ## License
 
-This project is provided for educational purposes. Use at your own risk. No warranty or support is implied. You are free to modify and distribute it under the terms of the MIT License.
+This project is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0). See the LICENSE file for details.
 
 ## Acknowledgements
 
-- Microsoft DDK sample code (VFINTD, VKD) for the base VxD framework.
-- The community for preserving Windows 3.1 development tools.
+- Microsoft DDK sample code (VFINTD, VKD) for the VxD framework.
+- The community preserving Windows 3.1 development tools.
 
 ---
 
-Feel free to open issues or pull requests on GitHub. Contributions are welcome!
+**Please open an issue or pull request if you can help fix the remaining problems. Thank you!**
